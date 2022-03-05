@@ -45,10 +45,6 @@ export class AlarmKeypadEditor extends LitElement {
     return this._config.keypad !== false;
   }
 
-  get _quickset() {
-    return this._config.quickset !== false;
-  }
-
   get _audio() {
     return this._config._audio !== false;
   }
@@ -103,14 +99,6 @@ export class AlarmKeypadEditor extends LitElement {
                 @change="${this._valueChanged}"
               ></ha-switch
               ><span>Show keypad</span>
-            </div>
-            <div class="switch">
-              <ha-switch
-                .checked=${this._quickset}
-                .configValue="${"quickset"}"
-                @change="${this._valueChanged}"
-              ></ha-switch
-              ><span>Show quickset</span>
             </div>
             <div class="switch">
               <ha-switch

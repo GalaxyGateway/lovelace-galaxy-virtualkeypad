@@ -87,7 +87,6 @@ class AlarmKeypad extends LitElement {
             <div class='keypad'>
               ${this._config.display !== false ? this._renderDisplay() : ""}
               ${this._config.keypad !== false ? this._renderKeypad() : ""}
-              ${this._config.quickset !== false ? this._renderQuickset() : ""}
               ${this._config.audio !== false ? this._renderAudio() : ""}
             </div>
           </div>
@@ -98,8 +97,11 @@ class AlarmKeypad extends LitElement {
 
   _renderDisplay() {
 
-    const kpdline1 = this.hass.states["sensor.keypad_" +this._config.uniqueid+"_display_1"];
-    const kpdline2 = this.hass.states["sensor.keypad_" +this._config.uniqueid+"_display_2"];
+    let line1 = "sensor.keypad_" +this._config.uniqueid+"_display_1";
+    let line2 = "sensor.keypad_" +this._config.uniqueid+"_display_2";
+
+    const kpdline1 = this.hass.states[line1];
+    const kpdline2 = this.hass.states[line2];
 
     return html`
       <div class="keypad_display">
@@ -221,35 +223,16 @@ class AlarmKeypad extends LitElement {
     `;
   }
 
-  _renderQuickset() {
-    return html`
-      <div class="quickset">
-        <button
-          class='mdc-button mdc-button--raised mdc-ripple-upgraded'
-          toggles state="A"
-          on-click='setState'
-          title='Unset'>Timed set
-        </button>
-        <button
-          class='mdc-button mdc-button--raised mdc-ripple-upgraded'
-          toggles state="B"
-          on-click='setState'
-          title='Unset'>Part set
-        </button>
-      </div>
-    `;
-  }
-
   _renderAudio() {
     return html`
       <audio id="exitsound1" loop>
-        <source src="/local/custom-ui/beep.mp3" type="audio/mpeg">
+        <source src="./beep.mp3" type="audio/mpeg">
       </audio>
       <audio id="exitsound2" loop>
-        <source src="/local/custom-ui/beep_fast.mp3" type="audio/mpeg">
+        <source src="./beep_fast.mp3" type="audio/mpeg">
       </audio>
       <audio id="chime">
-        <source src="/local/custom-ui/ding_dong.mp3" type="audio/mpeg">
+        <source src="./ding_dong.mp3" type="audio/mpeg">
       </audio>
     `;
   }
@@ -283,7 +266,7 @@ class AlarmKeypad extends LitElement {
   setState(e) {
     // const newState = e.currentTarget.getAttribute('state');
     
-    this._hass.callService('mqtt', 'publish', {
+    this.hass.callService('mqtt', 'publish', {
         topic: "galaxy/" + this._config.uniqueid + "/keypad/key",
         payload: e
     });
@@ -371,13 +354,6 @@ class AlarmKeypad extends LitElement {
       .mdc-button {
         margin-right: 7px;
         margin-bottom: 9px;
-      }
-
-      .quickset {
-        padding-left: 2px;
-        text-align:center;
-        justify-content: center;
-        margin: auto;
       }
 
       .under {
