@@ -117,12 +117,13 @@ class AlarmKeypad extends LitElement {
         <div>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
-            @click="${this.setState("1")}"
-            title='Unset'>1
+            toggles state="1"
+            on-click='setState'
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
-            @click="${this.setState("4")}"
+            toggles state="4"
+            on-click='setState'
             title='Unset'>4
           </button>
           <button
