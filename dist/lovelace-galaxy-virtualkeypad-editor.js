@@ -87,12 +87,6 @@ export class AlarmKeypadEditor extends LitElement {
             .configValue="${"title"}"
             @value-changed="${this._valueChanged}"
           ></paper-input>
-          <paper-input
-            label="Icons location"
-            .value="${this._icons}"
-            .configValue="${"icons"}"
-            @value-changed="${this._valueChanged}"
-          ></paper-input>
           <div class="switches">
             <div class="switch">
               <ha-switch
