@@ -52,8 +52,8 @@ class AlarmKeypadCard extends LitElement {
   }
 
   static async getConfigElement() {
-    await import("./lovelace-galaxy-virtualkeypad-editor-editor.js");
-    return document.createElement("virtualkeypad-card-editor");
+    await import("./lovelace-galaxy-virtualkeypad-editor.js");
+    return document.createElement("lovelace-galaxy-virtualkeypad-editor");
   }
 
   static getStubConfig(hass, unusedEntities, allEntities) {
