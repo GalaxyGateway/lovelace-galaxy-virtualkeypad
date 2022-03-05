@@ -265,11 +265,11 @@ class AlarmKeypad extends LitElement {
   // }
 
   setState(e) {
-    // const newState = e.currentTarget.getAttribute('state');
+    const newState = e.currentTarget.getAttribute('state');
     
     this.hass.callService('mqtt', 'publish', {
         topic: "galaxy/" + this._config.uniqueid + "/keypad/key",
-        payload: e
+        payload: newState
     });
   }
 
