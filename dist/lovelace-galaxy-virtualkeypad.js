@@ -81,8 +81,8 @@ class AlarmKeypad extends LitElement {
     }
 
     return html`
-      <ha-card header="[[_config.title]]">
-        <div id="zoom" style="[[_config.scale]]">
+      <ha-card header="${this._config.title}">
+        <div id="zoom" style="${this._config.scale}">
           <div class='flex-container' @click="${this.stopPropagation}">
             <div class='keypad'>
               ${this._config.display !== false ? this._renderDisplay() : ""}
@@ -103,8 +103,8 @@ class AlarmKeypad extends LitElement {
 
     return html`
       <div class="keypad_display">
-        <div class="keypad_state" id="keypad_state1">[[kpdline1]]</div>
-        <div class="keypad_state" id="keypad_state2">[[kpdline2]]</div>
+        <div class="keypad_state" id="keypad_state1">${kpdline1}</div>
+        <div class="keypad_state" id="keypad_state2">${kpdline2}</div>
       </div>
     `;
   }
