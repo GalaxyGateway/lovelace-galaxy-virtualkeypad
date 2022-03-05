@@ -115,14 +115,12 @@ class AlarmKeypad extends LitElement {
         <div>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
-            toggles state="1"
-            on-click='setState'
+            @click="${this.setState("1")}"
             title='Unset'>1
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
-            toggles state="4"
-            on-click='setState'
+            @click="${this.setState("4")}"
             title='Unset'>4
           </button>
           <button
@@ -283,11 +281,11 @@ class AlarmKeypad extends LitElement {
   // }
 
   setState(e) {
-    const newState = e.currentTarget.getAttribute('state');
+    // const newState = e.currentTarget.getAttribute('state');
     
     this._hass.callService('mqtt', 'publish', {
         topic: "galaxy/" + this._config.uniqueid + "/keypad/key",
-        payload: newState
+        payload: e
     });
   }
 
