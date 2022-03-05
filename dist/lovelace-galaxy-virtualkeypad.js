@@ -86,7 +86,7 @@ class AlarmKeypad extends LitElement {
           <div class='flex-container' @click="${this.stopPropagation}">
             <div class='keypad'>
               ${this._config.display !== false ? this._renderDisplay() : ""}
-              ${this._config.keypad !== false ? this._renderkeypad() : ""}
+              ${this._config.keypad !== false ? this._renderKeypad() : ""}
               ${this._config.quickset !== false ? this._renderQuickset() : ""}
               ${this._config.audio !== false ? this._renderAudio() : ""}
             </div>
