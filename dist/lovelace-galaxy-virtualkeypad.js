@@ -43,7 +43,7 @@ function hasConfigOrEntityChanged(element, changedProps) {
   return true;
 }
 
-class AlarmKeypadCard extends LitElement {
+class AlarmKeypad extends LitElement {
   static get properties() {
     return {
       _config: {},
@@ -85,10 +85,10 @@ class AlarmKeypadCard extends LitElement {
         <div id="zoom" style="[[_config.scale]]">
           <div class='flex-container' @click="${this.stopPropagation}">
             <div class='keypad'>
-              ${this._config.display !== false ? this._renderDisplay(stateObj) : ""}
-              ${this._config.keypad !== false ? this._renderkeypad(stateObj) : ""}
-              ${this._config.quickset !== false ? this._renderQuickset(stateObj) : ""}
-              ${this._config.audio !== false ? this._renderAudio(stateObj) : ""}
+              ${this._config.display !== false ? this._renderDisplay() : ""}
+              ${this._config.keypad !== false ? this._renderkeypad() : ""}
+              ${this._config.quickset !== false ? this._renderQuickset() : ""}
+              ${this._config.audio !== false ? this._renderAudio() : ""}
             </div>
           </div>
         </div>
@@ -96,7 +96,7 @@ class AlarmKeypadCard extends LitElement {
     `;
   }
 
-  _renderDisplay(stateObj) {
+  _renderDisplay() {
 
     const kpdline1 = this._hass.states["sensor.keypad_" +this._config.uniqueid+"_display_1"];
     const kpdline2 = this._hass.states["sensor.keypad_" +this._config.uniqueid+"_display_2"];
@@ -109,7 +109,7 @@ class AlarmKeypadCard extends LitElement {
     `;
   }
 
-  _renderKeypad(stateObj) {
+  _renderKeypad() {
     return html`
       <div class="pad">
         <div>
@@ -223,7 +223,7 @@ class AlarmKeypadCard extends LitElement {
     `;
   }
 
-  _renderQuickset(stateObj) {
+  _renderQuickset() {
     return html`
       <div class="quickset">
         <button
@@ -242,7 +242,7 @@ class AlarmKeypadCard extends LitElement {
     `;
   }
 
-  _renderAudio(stateObj) {
+  _renderAudio() {
     return html`
       <audio id="exitsound1" loop>
         <source src="/local/custom-ui/beep.mp3" type="audio/mpeg">
@@ -404,5 +404,5 @@ class AlarmKeypadCard extends LitElement {
   }
 }
 
-customElements.define('lovelace-galaxy-virtualkeypad', AlarmKeypadCard);
+customElements.define('lovelace-galaxy-virtualkeypad', AlarmKeypad);
    

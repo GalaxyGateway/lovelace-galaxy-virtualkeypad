@@ -24,7 +24,7 @@ const css = LitElement.prototype.css;
 
 const HELPERS = window.loadCardHelpers();
 
-export class AlarmKeypadCardEditor extends LitElement {
+export class AlarmKeypadEditor extends LitElement {
   setConfig(config) {
     this._config = { ...config };
   }
@@ -189,4 +189,4 @@ export class AlarmKeypadCardEditor extends LitElement {
   }
 }
 
-customElements.define("lovelace-galaxy-virtualkeypad-editor", AlarmKeypadCardEditor);
+customElements.define("lovelace-galaxy-virtualkeypad-editor", AlarmKeypadEditor);
