@@ -116,14 +116,8 @@ class AlarmKeypad extends LitElement {
   }
 
   _updateLine(l) {
-    let r="";
-
-    console.info(r)
-
+    let r = "";
     for (let i = 0; i < l.length; i++) r += this._translateChar(l[i]);
-
-    console.info(r)
-
     return r;
   }
 
