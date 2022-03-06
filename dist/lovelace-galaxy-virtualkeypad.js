@@ -100,8 +100,8 @@ class AlarmKeypad extends LitElement {
     let line1 = "sensor.keypad_" +this._config.uniqueid+"_display_1";
     let line2 = "sensor.keypad_" +this._config.uniqueid+"_display_2";
 
-    const kpdline1 = this.updateLine(this.hass.states[line1].state);
-    const kpdline2 = this.updateLine(this.hass.states[line2].state);
+    const kpdline1 = this._updateLine(this.hass.states[line1].state);
+    const kpdline2 = this._updateLine(this.hass.states[line2].state);
 
     return html`
       <div class="keypad_display">
@@ -243,11 +243,9 @@ class AlarmKeypad extends LitElement {
     e.stopPropagation();
   }
 
-  updateLine(text) {
+  _updateLine(text) {
     let line;
-
     for (let i = 0; i < text.length; i++) line += this._translateChar(text[i]);
-
     return line;
   }
 
