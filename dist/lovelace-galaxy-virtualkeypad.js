@@ -95,6 +95,10 @@ class AlarmKeypad extends LitElement {
     `;
   }
 
+  stopPropagation(e) {
+    e.stopPropagation();
+  }
+
   _renderDisplay() {
 
     let line1 = "sensor.keypad_" +this._config.uniqueid+"_display_1";
@@ -109,6 +113,22 @@ class AlarmKeypad extends LitElement {
         <div class="keypad_state" id="keypad_state2">${kpdline2}</div>
       </div>
     `;
+  }
+
+  _updateLine(l) {
+    let r;
+    for (let i = 0; i < l.length; i++) r += this._translateChar(l[i]);
+
+    return r;
+  }
+
+  _translateChar(c) {
+    // if (c.match('à') !== null ) return '<span class="blink">' + c + '</span>';
+    // if (c.match('á') !== null ) return '<span class="under">' + c + '</span>';
+    if (c.match('è') !== null ) return '░';
+    if (c.match('é') !== null ) return '▓';
+
+    return c;
   }
 
   _renderKeypad() {
@@ -225,6 +245,15 @@ class AlarmKeypad extends LitElement {
     `;
   }
 
+  setState(e) {
+    const newState = e.currentTarget.getAttribute('state');
+    
+    this.hass.callService('mqtt', 'publish', {
+        topic: "galaxy/" + this._config.uniqueid + "/keypad/key",
+        payload: newState
+    });
+  }
+
   _renderAudio() {
     return html`
       <audio id="exitsound1" loop>
@@ -237,34 +266,6 @@ class AlarmKeypad extends LitElement {
         <source src="./ding_dong.mp3" type="audio/mpeg">
       </audio>
     `;
-  }
-
-  stopPropagation(e) {
-    e.stopPropagation();
-  }
-
-  _updateLine(text) {
-    let line;
-    for (let i = 0; i < text.length; i++) line += this._translateChar(text[i]);
-    return line;
-  }
-
-  _translateChar(c) {
-    // if (c.match('à') !== null ) return '<span class="blink">' + c + '</span>';
-    // if (c.match('á') !== null ) return '<span class="under">' + c + '</span>';
-    if (c.match('è') !== null ) return '░';
-    if (c.match('é') !== null ) return '▓';
-
-    return c;
-  }
-
-  setState(e) {
-    const newState = e.currentTarget.getAttribute('state');
-    
-    this.hass.callService('mqtt', 'publish', {
-        topic: "galaxy/" + this._config.uniqueid + "/keypad/key",
-        payload: newState
-    });
   }
 
   beepChanged() {
@@ -296,7 +297,7 @@ class AlarmKeypad extends LitElement {
 
   getCardSize() {
     let size = 2;
-    if (this._config.view_pad) size += 4;     // 550px - 190px / 50
+    if (this._config.keypad) size += 4;     // 550px - 190px / 50
     return size;
   }
   
