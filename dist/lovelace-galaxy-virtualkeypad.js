@@ -254,6 +254,9 @@ class AlarmKeypad extends LitElement {
   }
 
   _renderAudio() {
+
+    this._beepChanged();
+
     return html`
       <audio id="exitsound1" loop>
         <source src="./beep.mp3" type="audio/mpeg">
@@ -267,7 +270,7 @@ class AlarmKeypad extends LitElement {
     `;
   }
 
-  beepChanged() {
+  _beepChanged() {
     if (this._config.audio) {
 
       let beep = "sensor.keypad_" +this._config.uniqueid+"_beep";
