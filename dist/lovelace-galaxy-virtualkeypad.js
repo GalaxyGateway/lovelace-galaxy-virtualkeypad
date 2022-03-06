@@ -100,12 +100,12 @@ class AlarmKeypad extends LitElement {
     let line1 = "sensor.keypad_" +this._config.uniqueid+"_display_1";
     let line2 = "sensor.keypad_" +this._config.uniqueid+"_display_2";
 
-    console.info(line1);
+    // console.info(line1);
 
-    const kpdline1 = this.hass.states[line1];
-    const kpdline2 = this.hass.states[line2];
+    const kpdline1 = this.hass.states[line1].state;
+    const kpdline2 = this.hass.states[line2].state;
 
-    console.info(kpdline1);
+    // console.info(kpdline1);
 
     return html`
       <div class="keypad_display">
