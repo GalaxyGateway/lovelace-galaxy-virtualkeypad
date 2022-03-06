@@ -100,12 +100,8 @@ class AlarmKeypad extends LitElement {
     let line1 = "sensor.keypad_" +this._config.uniqueid+"_display_1";
     let line2 = "sensor.keypad_" +this._config.uniqueid+"_display_2";
 
-    // console.info(line1);
-
-    const kpdline1 = this.hass.states[line1].state;
-    const kpdline2 = this.hass.states[line2].state;
-
-    // console.info(kpdline1);
+    const kpdline1 = updateLine(this.hass.states[line1].state);
+    const kpdline2 = updateLine(this.hass.states[line2].state);
 
     return html`
       <div class="keypad_display">
@@ -114,21 +110,6 @@ class AlarmKeypad extends LitElement {
       </div>
     `;
   }
-
-//   {
-//     "entity_id": "sensor.keypad_53e890_display_1",
-//     "state": "**              ",
-//     "attributes": {
-//         "friendly_name": "keypad_53e890_display_1"
-//     },
-//     "last_changed": "2022-03-06T08:20:11.951319+00:00",
-//     "last_updated": "2022-03-06T08:20:11.951319+00:00",
-//     "context": {
-//         "id": "1097d2efa7e79a0e740cafb239947df8",
-//         "parent_id": null,
-//         "user_id": null
-//     }
-// }
 
   _renderKeypad() {
     return html`
@@ -262,27 +243,22 @@ class AlarmKeypad extends LitElement {
     e.stopPropagation();
   }
 
-  // displayChanged() {
-  //   let state1 = "";
-  //   let state2 = "";
+  updateLine(text) {
+    let line;
 
-  //   for (let i = 0; i < this._kpdline1.state.length; i++) state1 += this._translateChar(this._kpdline1.state[i]);
-  //   for (let i = 0; i < this._kpdline2.state.length; i++) state2 += this._translateChar(this._kpdline2.state[i]);
+    for (let i = 0; i < text.length; i++) line += this._translateChar(text[i]);
 
-  //   this.setProperties({
-  //     _line1: state1,
-  //     _line2: state2
-  //   });
-  // }
+    return line;
+  }
 
-  // _translateChar(c) {
-  //   // if (c.match('à') !== null ) return '<span class="blink">' + c + '</span>';
-  //   // if (c.match('á') !== null ) return '<span class="under">' + c + '</span>';
-  //   if (c.match('è') !== null ) return '░';
-  //   if (c.match('é') !== null ) return '▓';
+  _translateChar(c) {
+    // if (c.match('à') !== null ) return '<span class="blink">' + c + '</span>';
+    // if (c.match('á') !== null ) return '<span class="under">' + c + '</span>';
+    if (c.match('è') !== null ) return '░';
+    if (c.match('é') !== null ) return '▓';
 
-  //   return c;
-  // }
+    return c;
+  }
 
   setState(e) {
     const newState = e.currentTarget.getAttribute('state');
@@ -293,26 +269,32 @@ class AlarmKeypad extends LitElement {
     });
   }
 
-  // beepChanged() {
-  //   if (this._kpdbeep.state == "0") {
-  //     var promise = this.shadowRoot.getElementById("exitsound1").pause();
-  //     this.shadowRoot.getElementById("exitsound2").pause();
-  //   } else if (this._kpdbeep.state == "1") {
-  //     var promise = this.shadowRoot.getElementById("exitsound1").play();
-  //   } else if (this._kpdbeep.state == "2") {
-  //     var promise = this.shadowRoot.getElementById("exitsound2").play();
-  //   } else if (this._kpdbeep.state == "3") {
-  //     var promise = this.shadowRoot.getElementById("chime").play();
-  //   }
+  beepChanged() {
+    if (this._config.audio) {
 
-  //   if (promise !== undefined) {
-  //     promise.then(_ => {
-  //       // Autoplay started!
-  //     }).catch(error => {
-  //       console.warn('Sound auto play not enabled, check browser settings');
-  //     });
-  //   }
-  // }
+      let beep = "sensor.keypad_" +this._config.uniqueid+"_beep";
+      const beeper = updateLine(this.hass.states[beep].state);
+  
+      if (beeper == "0") {
+        var promise = this.shadowRoot.getElementById("exitsound1").pause();
+        this.shadowRoot.getElementById("exitsound2").pause();
+      } else if (beeper == "1") {
+        var promise = this.shadowRoot.getElementById("exitsound1").play();
+      } else if (beeper == "2") {
+        var promise = this.shadowRoot.getElementById("exitsound2").play();
+      } else if (beeper == "3") {
+        var promise = this.shadowRoot.getElementById("chime").play();
+      }
+
+      if (promise !== undefined) {
+        promise.then(_ => {
+          // Autoplay started!
+        }).catch(error => {
+          console.warn('Sound auto play not enabled, check browser settings');
+        });
+      }
+    }
+  }
 
   getCardSize() {
     let size = 2;
