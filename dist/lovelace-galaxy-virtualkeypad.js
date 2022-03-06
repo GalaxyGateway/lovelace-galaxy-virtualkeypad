@@ -115,6 +115,21 @@ class AlarmKeypad extends LitElement {
     `;
   }
 
+//   {
+//     "entity_id": "sensor.keypad_53e890_display_1",
+//     "state": "**              ",
+//     "attributes": {
+//         "friendly_name": "keypad_53e890_display_1"
+//     },
+//     "last_changed": "2022-03-06T08:20:11.951319+00:00",
+//     "last_updated": "2022-03-06T08:20:11.951319+00:00",
+//     "context": {
+//         "id": "1097d2efa7e79a0e740cafb239947df8",
+//         "parent_id": null,
+//         "user_id": null
+//     }
+// }
+
   _renderKeypad() {
     return html`
       <div class="pad">
