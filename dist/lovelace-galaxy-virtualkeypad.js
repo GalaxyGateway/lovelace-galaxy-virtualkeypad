@@ -100,8 +100,12 @@ class AlarmKeypad extends LitElement {
     let line1 = "sensor.keypad_" +this._config.uniqueid+"_display_1";
     let line2 = "sensor.keypad_" +this._config.uniqueid+"_display_2";
 
+    console.info(line1);
+
     const kpdline1 = this.hass.states[line1];
     const kpdline2 = this.hass.states[line2];
+
+    console.info(kpdline1);
 
     return html`
       <div class="keypad_display">
@@ -118,25 +122,25 @@ class AlarmKeypad extends LitElement {
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="1"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>1
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="4"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>4
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="7"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>7
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="*"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>*
           </button>
         </div>
@@ -145,25 +149,25 @@ class AlarmKeypad extends LitElement {
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="2"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>2
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="5"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>5
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="8"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>8
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="0"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>0
           </button>
         </div>
@@ -172,25 +176,25 @@ class AlarmKeypad extends LitElement {
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="3"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>3
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="6"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>6
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="9"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>9
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="#"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>#
           </button>
         </div>
@@ -199,25 +203,25 @@ class AlarmKeypad extends LitElement {
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="A"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>A &gt;
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="B"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>B &lt;
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="C"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>ENT
           </button>
           <button
             class='mdc-button mdc-button--raised mdc-ripple-upgraded'
             toggles state="D"
-            @click="${this.setSate}"
+            @click="${this.setState}"
             title='Unset'>ESC
           </button>
         </div>
