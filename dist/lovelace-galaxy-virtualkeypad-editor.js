@@ -49,8 +49,8 @@ export class AlarmKeypadEditor extends LitElement {
     return this._config._audio !== false;
   }
 
-  get _uniqueid() {
-    return this._config.uniqueid || "";
+  get _unique_id() {
+    return this._config.unique_id || "";
   }
 
   get _scale() {
@@ -112,8 +112,8 @@ export class AlarmKeypadEditor extends LitElement {
           <paper-input
             label="Unique module ID"
             type="text"
-            value=${this._uniqueid}
-            .configValue="${"uniqueid"}"
+            value=${this._unique_id}
+            .configValue="${"unique_id"}"
             @value-changed="${this._valueChanged}"
           ></paper-input>
           <paper-input

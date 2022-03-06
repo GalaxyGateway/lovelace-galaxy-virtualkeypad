@@ -13,34 +13,12 @@ window.customCards.push({
   documentationURL: "https://github.com/GalaxyGateway/lovelace-galaxy-virtualkeypad",
 });
 
-const fireEvent = (node, type, detail, options) => {
-  options = options || {};
-  detail = detail === null || detail === undefined ? {} : detail;
-  const event = new Event(type, {
-    bubbles: options.bubbles === undefined ? true : options.bubbles,
-    cancelable: Boolean(options.cancelable),
-    composed: options.composed === undefined ? true : options.composed,
-  });
-  event.detail = detail;
-  node.dispatchEvent(event);
-  return event;
-};
-
 function hasConfigOrEntityChanged(element, changedProps) {
   if (changedProps.has("_config")) {
     return true;
   }
 
-  // const oldHass = changedProps.get("hass");
-  // if (oldHass) {
-  //   return (
-  //     oldHass.states[element._config.entity] !==
-  //       element.hass.states[element._config.entity] ||
-  //     oldHass.states["sun.sun"] !== element.hass.states["sun.sun"]
-  //   );
-  // }
-
-  return true;
+  return false;
 }
 
 class AlarmKeypad extends LitElement {
@@ -101,8 +79,8 @@ class AlarmKeypad extends LitElement {
 
   _renderDisplay() {
 
-    let line1 = "sensor.keypad_" +this._config.uniqueid+"_display_1";
-    let line2 = "sensor.keypad_" +this._config.uniqueid+"_display_2";
+    let line1 = "sensor.keypad_" +this._config.unique_id+"_display_1";
+    let line2 = "sensor.keypad_" +this._config.unique_id+"_display_2";
 
     const kpdline1 = this._updateLine(this.hass.states[line1].state);
     const kpdline2 = this._updateLine(this.hass.states[line2].state);
@@ -248,7 +226,7 @@ class AlarmKeypad extends LitElement {
     const newState = e.currentTarget.getAttribute('state');
     
     this.hass.callService('mqtt', 'publish', {
-        topic: "galaxy/" + this._config.uniqueid + "/keypad/key",
+        topic: "galaxy/" + this._config.unique_id + "/keypad/key",
         payload: newState
     });
   }
@@ -270,7 +248,7 @@ class AlarmKeypad extends LitElement {
   _firstRendered() {
 
     if (this._config.audio) {
-      let beep = "sensor.keypad_" +this._config.uniqueid+"_beep";
+      let beep = "sensor.keypad_" +this._config.unique_id+"_beep";
       const beeper = this.hass.states[beep].state;
 
       if (beeper == "0") {
