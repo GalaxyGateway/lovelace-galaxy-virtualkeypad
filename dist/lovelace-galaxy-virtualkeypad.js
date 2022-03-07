@@ -18,7 +18,7 @@ function hasConfigOrEntityChanged(element, changedProps) {
     return true;
   }
 
-  return false;
+  return true;
 }
 
 class AlarmKeypad extends LitElement {
