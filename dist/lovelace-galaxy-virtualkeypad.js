@@ -256,6 +256,29 @@ class AlarmKeypad extends LitElement {
         <source src="/local/community/lovelace-galaxy-virtualkeypad/ding_dong.mp3" type="audio/mpeg">
       </audio>
     `;
+    
+      let beep = "sensor.keypad_" +this._config.unique_id+"_beep";
+      const beeper = this.hass.states[beep].state;
+
+      if (beeper == "0") {
+        var promise = this.shadowRoot.getElementById("exitsound1").pause();
+        this.shadowRoot.getElementById("exitsound2").pause();
+      } else if (beeper == "1") {
+        var promise = this.shadowRoot.getElementById("exitsound1").play();
+      } else if (beeper == "2") {
+        var promise = this.shadowRoot.getElementById("exitsound2").play();
+      } else if (beeper == "3") {
+        var promise = this.shadowRoot.getElementById("chime").play();
+      }
+
+      if (promise !== undefined) {
+        promise.then(_ => {
+          // Autoplay started!
+        }).catch(error => {
+          console.warn('Sound auto play not enabled, check browser settings');
+        });
+      }
+    
   }
 
   async firstUpdated() {
