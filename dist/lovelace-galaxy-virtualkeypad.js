@@ -260,7 +260,6 @@ class AlarmKeypad extends LitElement {
 
   updated() {
     
-    if (this._config.audio) {
       let beep = "sensor.keypad_" +this._config.unique_id+"_beep";
       const beeper = this.hass.states[beep].state;
 
@@ -282,7 +281,7 @@ class AlarmKeypad extends LitElement {
           console.warn('Sound auto play not enabled, check browser settings');
         });
       }
-    }
+    
   }
 
   getCardSize() {
