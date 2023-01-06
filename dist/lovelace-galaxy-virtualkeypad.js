@@ -260,7 +260,7 @@ class AlarmKeypad extends LitElement {
 
   updated() {
     
-    if (this._config.audio !== false) {
+    if (this._config.audio !== false) { 
       let beep = "sensor.keypad_" +this._config.unique_id+"_beep";
       const beeper = this.hass.states[beep].state;
 
