@@ -247,19 +247,20 @@ class AlarmKeypad extends LitElement {
   _renderAudio() {
     return html`
       <audio id="exitsound1" loop>
-        <source src="./beep.mp3" type="audio/mpeg">
+        <source src="/local/community/lovelace-galaxy-virtualkeypad/beep.mp3" type="audio/mpeg">
       </audio>
       <audio id="exitsound2" loop>
-        <source src="./beep_fast.mp3" type="audio/mpeg">
+        <source src="/local/community/lovelace-galaxy-virtualkeypad/beep_fast.mp3" type="audio/mpeg">
       </audio>
       <audio id="chime">
-        <source src="./ding_dong.mp3" type="audio/mpeg">
+        <source src="/local/community/lovelace-galaxy-virtualkeypad/ding_dong.mp3" type="audio/mpeg">
       </audio>
     `;    
   }
 
   updated() {
     
+    if (this._config.audio !== false) {
       let beep = "sensor.keypad_" +this._config.unique_id+"_beep";
       const beeper = this.hass.states[beep].state;
 
@@ -281,7 +282,7 @@ class AlarmKeypad extends LitElement {
           console.warn('Sound auto play not enabled, check browser settings');
         });
       }
-    
+    }
   }
 
   getCardSize() {
