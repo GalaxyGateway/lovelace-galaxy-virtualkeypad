@@ -247,13 +247,13 @@ class AlarmKeypad extends LitElement {
   _renderAudio() {
     return html`
       <audio id="exitsound1" loop>
-        <source src="/local/community/lovelace-galaxy-virtualkeypad/beep.mp3" type="audio/mpeg">
+        <source src="./beep.mp3" type="audio/mpeg">
       </audio>
       <audio id="exitsound2" loop>
-        <source src="/local/community/lovelace-galaxy-virtualkeypad/beep_fast.mp3" type="audio/mpeg">
+        <source src="./beep_fast.mp3" type="audio/mpeg">
       </audio>
       <audio id="chime">
-        <source src="/local/community/lovelace-galaxy-virtualkeypad/ding_dong.mp3" type="audio/mpeg">
+        <source src="./ding_dong.mp3" type="audio/mpeg">
       </audio>
     `;    
   }
