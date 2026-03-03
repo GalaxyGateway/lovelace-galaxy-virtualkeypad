@@ -1,5 +1,5 @@
 console.info(
-  "%c  lovelace-galaxy-virtualkeypad  \n%c Version 0.0.6 ",
+  "%c  lovelace-galaxy-virtualkeypad  \n%c Version 0.1.3 ",
   "color: orange; font-weight: bold; background: black",
   "color: white; font-weight: bold; background: dimgray"
 );
@@ -16,7 +16,7 @@ window.customCards.push({
   name: "Galaxy Keypad",
   description: "A virtual keypad for Honeywell Galaxy.",
   preview: true,
-  documentationURL: "https://github.com/GalaxyGateway/lovelace-galaxy-virtualkeypad_new",
+  documentationURL: "https://github.com/GalaxyGateway/lovelace-galaxy-virtualkeypad",
 });
 
 const fireEvent = (node, type, detail, options) => {
@@ -32,19 +32,23 @@ const fireEvent = (node, type, detail, options) => {
   return event;
 };
 
-// FIX #1: Only re-render when the relevant sensors actually change,
-// not on every single HA state update.
+// Only re-render when the relevant sensors actually change.
 function hasConfigOrEntityChanged(element, changedProps) {
   if (changedProps.has("_config")) return true;
   const hass = changedProps.get("hass");
   if (!hass) return false;
   const uid = element._config?.unique_id;
   if (!uid) return false;
-  const prefix = "sensor.galaxy_gateway_" + uid + "_keypad_" + uid + "_";
+  const legacy = element._config?.legacy_naming;
+  const prefix = legacy
+    ? "sensor.keypad_" + uid + "_"
+    : "sensor.galaxy_gateway_" + uid + "_keypad_" + uid + "_";
   return (
     hass.states[prefix + "display_1"] !== element.hass.states[prefix + "display_1"] ||
     hass.states[prefix + "display_2"] !== element.hass.states[prefix + "display_2"] ||
-    hass.states[prefix + "beep"]      !== element.hass.states[prefix + "beep"]
+    hass.states[prefix + "beep"]      !== element.hass.states[prefix + "beep"] ||
+    hass.states[prefix + "cursor"]    !== element.hass.states[prefix + "cursor"]    ||
+    hass.states[prefix + "flash"]     !== element.hass.states[prefix + "flash"]
   );
 }
 
@@ -69,7 +73,6 @@ class AlarmKeypad extends LitElement {
     return { entity };
   }
 
-  // FIX #2: Validate unique_id (the actual required field) with a clear message.
   setConfig(config) {
     if (!config.unique_id) {
       throw new Error("unique_id is required — please set it in the card editor.");
@@ -81,18 +84,17 @@ class AlarmKeypad extends LitElement {
     return hasConfigOrEntityChanged(this, changedProps);
   }
 
-  // FIX #6: Insert audio elements once after first render so they are never
-  // recreated during updates, preventing playback interruption.
+  // Insert audio elements once so they are never recreated during updates.
   firstUpdated() {
     if (this._config.audio !== false) {
-      const base = "/hacsfiles/lovelace-galaxy-virtualkeypad_new/";
+      const base = "/hacsfiles/lovelace-galaxy-virtualkeypad/";
       const audioContainer = document.createElement("div");
       audioContainer.innerHTML = `
         <audio id="exitsound1" loop><source src="${base}beep.mp3" type="audio/mpeg"></audio>
         <audio id="exitsound2" loop><source src="${base}beep_fast.mp3" type="audio/mpeg"></audio>
         <audio id="chime"><source src="${base}ding_dong.mp3" type="audio/mpeg"></audio>
       `;
-      this.shadowRoot.appendChild(audioContainer);
+      if (this.shadowRoot) this.shadowRoot.appendChild(audioContainer);
     }
   }
 
@@ -101,8 +103,7 @@ class AlarmKeypad extends LitElement {
       return html``;
     }
 
-    // FIX #4: Apply scale as a CSS transform, not a raw style string.
-    const scale = this._config.scale || 1;
+    const scale = Math.min(Math.max(parseFloat(this._config.scale) || 1, 0.1), 2);
 
     return html`
       <ha-card header="${this._config.title}">
@@ -122,70 +123,103 @@ class AlarmKeypad extends LitElement {
     e.stopPropagation();
   }
 
+  _sensorKey(uid, suffix) {
+    if (this._config.legacy_naming) {
+      return "sensor.keypad_" + uid + "_" + suffix;
+    }
+    return "sensor.galaxy_gateway_" + uid + "_keypad_" + uid + "_" + suffix;
+  }
+
   _renderDisplay() {
     const uid = this._config.unique_id;
-    const line1Key = "sensor.galaxy_gateway_" + uid + "_keypad_" + uid + "_display_1";
-    const line2Key = "sensor.galaxy_gateway_" + uid + "_keypad_" + uid + "_display_2";
+    const line1Key   = this._sensorKey(uid, "display_1");
+    const line2Key   = this._sensorKey(uid, "display_2");
+    const cursorKey  = this._sensorKey(uid, "cursor");
+    const flashKey   = this._sensorKey(uid, "flash");
 
-    // FIX #3: Guard against missing sensors to prevent crash.
+    let cursorPos  = -1;
+    let cursorType = 0;
+
+    const entity = this.hass.states[cursorKey];
+    if (entity) {
+      try {
+        cursorPos  = entity.attributes.pos;
+        cursorType = entity.attributes.type;
+      } catch (_) {}
+    }
+
+    const sf    = this.hass.states[flashKey];
+    const flash = sf && sf.state === "1";
+
     const s1 = this.hass.states[line1Key];
     const s2 = this.hass.states[line2Key];
     if (!s1 || !s2) {
       return html`<div class="keypad_display" style="color:red;padding:8px;">Sensors not found for ID: ${uid}</div>`;
     }
 
-    const kpdline1 = this._updateLine(s1.state);
-    const kpdline2 = this._updateLine(s2.state);
+    const kpdline1 = this._updateLine(s1.state, 0,  cursorPos, cursorType);
+    const kpdline2 = this._updateLine(s2.state, 16, cursorPos, cursorType);
+
+    const bgColor   = this._config.display_bg_color   || "#35758c";
+    const textColor = this._config.display_text_color || "#000000";
 
     return html`
-      <div class="keypad_display">
+      <div class="keypad_display ${flash ? "display-flash" : ""}" style="background:${bgColor}; color:${textColor}; --cursor-color:${textColor}; --cursor-bg:${bgColor}">
         <div class="keypad_state" id="keypad_state1">${kpdline1}</div>
         <div class="keypad_state" id="keypad_state2">${kpdline2}</div>
       </div>
     `;
   }
 
-  _updateLine(l) {
-    let r = "";
-    for (let i = 0; i < l.length; i++) r += this._translateChar(l[i]);
-    return r;
-  }
+  _updateLine(l, lineOffset, cursorPos, cursorType) {
+    // Split by Array.from so multi-byte UTF-8 chars (ä, █, →) each count as 1 cell.
+    const chars = Array.from(l);
+    return chars.map((ch, i) => {
+      const flatPos  = lineOffset + i;
+      const isCursor = (flatPos === cursorPos && cursorType !== 0);
 
-  _translateChar(c) {
-    if (c.match("è") !== null) return "░";
-    if (c.match("é") !== null) return "▓";
-    return c;
+      if (isCursor) {
+        // console.log("Cursor type" + cursorType);
+        if (cursorType === 1) {
+          // Blinking block: replace character with █ and apply blink animation
+          return html`<span class="cursor-blink">${ch}</span>`;
+        } else if (cursorType === 2) {
+          // Underline: keep character, add underline class
+          return html`<span class="cursor-under">${ch}</span>`;
+        }
+      }
+      return ch;
+    });
   }
 
   _renderKeypad() {
+    const btn = (state, label) => html`
+      <button
+        class="kpd-btn"
+        state="${state}"
+        @click="${this.setState}"
+        @touchstart="${this._btnPress}"
+        @touchend="${this._btnRelease}"
+        @touchcancel="${this._btnRelease}"
+      >${label}</button>
+    `;
     return html`
       <div class="pad">
-        <div>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="1" @click="${this.setState}">1</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="4" @click="${this.setState}">4</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="7" @click="${this.setState}">7</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="*" @click="${this.setState}">*</button>
-        </div>
-        <div>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="2" @click="${this.setState}">2</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="5" @click="${this.setState}">5</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="8" @click="${this.setState}">8</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="0" @click="${this.setState}">0</button>
-        </div>
-        <div>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="3" @click="${this.setState}">3</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="6" @click="${this.setState}">6</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="9" @click="${this.setState}">9</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="#" @click="${this.setState}">#</button>
-        </div>
-        <div>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="A" @click="${this.setState}">A &gt;</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="B" @click="${this.setState}">B &lt;</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="C" @click="${this.setState}">ENT</button>
-          <button class="mdc-button mdc-button--raised mdc-ripple-upgraded" state="D" @click="${this.setState}">ESC</button>
-        </div>
+        <div>${btn("1","1")}${btn("4","4")}${btn("7","7")}${btn("*","*")}</div>
+        <div>${btn("2","2")}${btn("5","5")}${btn("8","8")}${btn("0","0")}</div>
+        <div>${btn("3","3")}${btn("6","6")}${btn("9","9")}${btn("#","#")}</div>
+        <div>${btn("A","A >")}${btn("B","B <")}${btn("C","ENT")}${btn("D","ESC")}</div>
       </div>
     `;
+  }
+
+  _btnPress(e) {
+    e.currentTarget.classList.add("pressed");
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  _btnRelease(e) {
+    e.currentTarget.classList.remove("pressed");
   }
 
   setState(e) {
@@ -200,7 +234,7 @@ class AlarmKeypad extends LitElement {
     if (this._config.audio === false) return;
 
     const uid = this._config.unique_id;
-    const beepKey = "sensor.galaxy_gateway_" + uid + "_keypad_" + uid + "_beep";
+    const beepKey = this._sensorKey(uid, "beep");
     const beepState = this.hass.states[beepKey];
     if (!beepState) return;
 
@@ -209,7 +243,6 @@ class AlarmKeypad extends LitElement {
     const sound2 = this.shadowRoot.getElementById("exitsound2");
     const chime  = this.shadowRoot.getElementById("chime");
 
-    // Audio elements may not be ready on very first update
     if (!sound1) return;
 
     let promise;
@@ -231,7 +264,6 @@ class AlarmKeypad extends LitElement {
     }
   }
 
-  // FIX #8: Correctly check keypad !== false (default is shown).
   getCardSize() {
     let size = 2;
     if (this._config.keypad !== false) size += 4;
@@ -241,7 +273,7 @@ class AlarmKeypad extends LitElement {
   static get styles() {
     return css`
       ha-card {
-        padding-bottom: 16px;
+        padding-bottom: 10px;
         position: relative;
         font-size: calc(var(--base-unit));
       }
@@ -252,31 +284,28 @@ class AlarmKeypad extends LitElement {
         align-items: center;
       }
 
-      @keyframes mdc-ripple-fg-radius-in{from{animation-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transform:translate(var(--mdc-ripple-fg-translate-start, 0)) scale(1)}to{transform:translate(var(--mdc-ripple-fg-translate-end, 0)) scale(var(--mdc-ripple-fg-scale, 1))}}
-      @keyframes mdc-ripple-fg-opacity-in{from{animation-timing-function:linear;opacity:0}to{opacity:var(--mdc-ripple-fg-opacity, 0)}}
-      @keyframes mdc-ripple-fg-opacity-out{from{animation-timing-function:linear;opacity:var(--mdc-ripple-fg-opacity, 0)}to{opacity:0}}.mdc-ripple-surface--test-edge-var-bug{--mdc-ripple-surface-test-edge-var: 1px solid #000;visibility:hidden}.mdc-ripple-surface--test-edge-var-bug::before{border:var(--mdc-ripple-surface-test-edge-var)}.mdc-button{font-family:Roboto,sans-serif;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;font-size:.875rem;line-height:2.25rem;font-weight:500;letter-spacing:.0892857143em;text-decoration:none;text-transform:uppercase;--mdc-ripple-fg-size: 0;--mdc-ripple-left: 0;--mdc-ripple-top: 0;--mdc-ripple-fg-scale: 1;--mdc-ripple-fg-translate-end: 0;--mdc-ripple-fg-translate-start: 0;-webkit-tap-highlight-color:rgba(0,0,0,0);will-change:transform,opacity;padding:0 8px 0 8px;display:inline-flex;position:relative;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;height:36px;border:none;outline:none;line-height:inherit;user-select:none;-webkit-appearance:none;overflow:hidden;vertical-align:middle;border-radius:4px}.mdc-button::before,.mdc-button::after{position:absolute;border-radius:50%;opacity:0;pointer-events:none;content:""}.mdc-button::before{transition:opacity 15ms linear,background-color 15ms linear;z-index:1}.mdc-button.mdc-ripple-upgraded::before{transform:scale(var(--mdc-ripple-fg-scale, 1))}.mdc-button.mdc-ripple-upgraded::after{top:0;left:0;transform:scale(0);transform-origin:center center}.mdc-button.mdc-ripple-upgraded--unbounded::after{top:var(--mdc-ripple-top, 0);left:var(--mdc-ripple-left, 0)}.mdc-button.mdc-ripple-upgraded--foreground-activation::after{animation:225ms mdc-ripple-fg-radius-in forwards,75ms mdc-ripple-fg-opacity-in forwards}.mdc-button.mdc-ripple-upgraded--foreground-deactivation::after{animation:150ms mdc-ripple-fg-opacity-out;transform:translate(var(--mdc-ripple-fg-translate-end, 0)) scale(var(--mdc-ripple-fg-scale, 1))}.mdc-button::before,.mdc-button::after{top:calc(50% - 100%);left:calc(50% - 100%);width:200%;height:200%}.mdc-button.mdc-ripple-upgraded::after{width:var(--mdc-ripple-fg-size, 100%);height:var(--mdc-ripple-fg-size, 100%)}.mdc-button::-moz-focus-inner{padding:0;border:0}.mdc-button:active{outline:none}.mdc-button:hover{cursor:pointer}.mdc-button:disabled{background-color:transparent;color:rgba(0,0,0,.37);cursor:default;pointer-events:none}.mdc-button.mdc-button--dense{border-radius:4px}.mdc-button:not(:disabled){background-color:transparent}.mdc-button:not(:disabled){color:#6200ee;color:var(--mdc-theme-primary, #6200ee)}.mdc-button::before,.mdc-button::after{background-color:#6200ee}@supports not (-ms-ime-align: auto){.mdc-button::before,.mdc-button::after{background-color:var(--mdc-theme-primary, #6200ee)}}.mdc-button:hover::before{opacity:.04}.mdc-button:not(.mdc-ripple-upgraded):focus::before,.mdc-button.mdc-ripple-upgraded--background-focused::before{transition-duration:75ms;opacity:.12}.mdc-button:not(.mdc-ripple-upgraded)::after{transition:opacity 150ms linear}.mdc-button:not(.mdc-ripple-upgraded):active::after{transition-duration:75ms;opacity:.16}.mdc-button.mdc-ripple-upgraded{--mdc-ripple-fg-opacity: 0.16}.mdc-button .mdc-button__icon{margin-left:0;margin-right:8px;display:inline-block;width:18px;height:18px;font-size:18px;vertical-align:top}[dir=rtl] .mdc-button .mdc-button__icon,.mdc-button .mdc-button__icon[dir=rtl]{margin-left:8px;margin-right:0}.mdc-button svg.mdc-button__icon{fill:currentColor}.mdc-button--raised .mdc-button__icon,.mdc-button--unelevated .mdc-button__icon,.mdc-button--outlined .mdc-button__icon{margin-left:-4px;margin-right:8px}[dir=rtl] .mdc-button--raised .mdc-button__icon,.mdc-button--raised .mdc-button__icon[dir=rtl],[dir=rtl] .mdc-button--unelevated .mdc-button__icon,.mdc-button--unelevated .mdc-button__icon[dir=rtl],[dir=rtl] .mdc-button--outlined .mdc-button__icon,.mdc-button--outlined .mdc-button__icon[dir=rtl]{margin-left:8px;margin-right:-4px}.mdc-button--raised,.mdc-button--unelevated{padding:7px 16px 7px 16px}.mdc-button--raised:disabled,.mdc-button--unelevated:disabled{background-color:rgba(0,0,0,.12);color:rgba(0,0,0,.37)}.mdc-button--raised:not(:disabled),.mdc-button--unelevated:not(:disabled){background-color:#6200ee}@supports not (-ms-ime-align: auto){.mdc-button--raised:not(:disabled),.mdc-button--unelevated:not(:disabled){background-color:var(--mdc-theme-primary, #6200ee)}}.mdc-button--raised:not(:disabled),.mdc-button--unelevated:not(:disabled){color:#fff;color:var(--mdc-theme-on-primary, #fff)}.mdc-button--raised::before,.mdc-button--raised::after,.mdc-button--unelevated::before,.mdc-button--unelevated::after{background-color:#fff}@supports not (-ms-ime-align: auto){.mdc-button--raised::before,.mdc-button--raised::after,.mdc-button--unelevated::before,.mdc-button--unelevated::after{background-color:var(--mdc-theme-on-primary, #fff)}}.mdc-button--raised:hover::before,.mdc-button--unelevated:hover::before{opacity:.08}.mdc-button--raised:not(.mdc-ripple-upgraded):focus::before,.mdc-button--raised.mdc-ripple-upgraded--background-focused::before,.mdc-button--unelevated:not(.mdc-ripple-upgraded):focus::before,.mdc-button--unelevated.mdc-ripple-upgraded--background-focused::before{transition-duration:75ms;opacity:.24}.mdc-button--raised:not(.mdc-ripple-upgraded)::after,.mdc-button--unelevated:not(.mdc-ripple-upgraded)::after{transition:opacity 150ms linear}.mdc-button--raised:not(.mdc-ripple-upgraded):active::after,.mdc-button--unelevated:not(.mdc-ripple-upgraded):active::after{transition-duration:75ms;opacity:.32}.mdc-button--raised.mdc-ripple-upgraded,.mdc-button--unelevated.mdc-ripple-upgraded{--mdc-ripple-fg-opacity: 0.32}.mdc-button--raised{box-shadow:0px 3px 1px -2px rgba(0, 0, 0, 0.2),0px 2px 2px 0px rgba(0, 0, 0, 0.14),0px 1px 5px 0px rgba(0,0,0,.12);transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-button--raised:hover,.mdc-button--raised:focus{box-shadow:0px 2px 4px -1px rgba(0, 0, 0, 0.2),0px 4px 5px 0px rgba(0, 0, 0, 0.14),0px 1px 10px 0px rgba(0,0,0,.12)}.mdc-button--raised:active{box-shadow:0px 5px 5px -3px rgba(0, 0, 0, 0.2),0px 8px 10px 1px rgba(0, 0, 0, 0.14),0px 3px 14px 2px rgba(0,0,0,.12)}.mdc-button--raised:disabled{box-shadow:0px 0px 0px 0px rgba(0, 0, 0, 0.2),0px 0px 0px 0px rgba(0, 0, 0, 0.14),0px 0px 0px 0px rgba(0,0,0,.12)}.mdc-button--outlined{border-style:solid;padding:0 14px 0 14px;border-width:2px}.mdc-button--outlined:disabled{border-color:rgba(0,0,0,.37)}.mdc-button--outlined:not(:disabled){border-color:#6200ee;border-color:var(--mdc-theme-primary, #6200ee)}.mdc-button--dense{height:32px;font-size:.8125rem}.material-icons{font-family:var(--mdc-icon-font, "Material Icons");font-weight:normal;font-style:normal;font-size:var(--mdc-icon-size, 24px);line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:"liga";-webkit-font-smoothing:antialiased}:host{outline:none}.mdc-button{flex:1}
-
       .keypad_display {
-        background: #35758c;
         border-radius: 10px;
         width: 200px;
         height: 50px;
-        margin: auto;
-        padding-top: 15px;
+        padding-top: 10px;
         padding-bottom: 10px;
-        margin-bottom: 20px;
+        margin: 10px auto 10px auto;
       }
+
       .keypad_state {
-        padding-left: 30px;
+        padding: 5px 30px 5px;
         font-size: calc(var(--base-unit) * 1);
         line-height: 1.1;
-        color: black;
+        color: inherit;
         font-family: monospace;
       }
+
       #keypad_state1 {
-        padding-bottom: 10px;
+        padding-bottom: 5px;
         white-space: pre-wrap;
       }
+
       #keypad_state2 {
         white-space: pre-wrap;
       }
@@ -285,30 +314,92 @@ class AlarmKeypad extends LitElement {
         display: flex;
         justify-content: center;
       }
+
       .pad div {
         display: flex;
         flex-direction: column;
       }
 
-      .mdc-button {
-        margin-right: 7px;
-        margin-bottom: 9px;
+      /* Clean keypad buttons with enlarge-on-press animation */
+      .kpd-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 36px;
+        margin: 4px;
+        border: none;
+        border-radius: 6px;
+        background-color: var(--mdc-theme-primary, #6200ee);
+        color: #fff;
+        font-family: Roboto, sans-serif;
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: 0.089em;
+        text-transform: uppercase;
+        cursor: pointer;
+        user-select: none;
+        outline: none;
+        box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2),
+                    0px 2px 2px 0px rgba(0,0,0,0.14),
+                    0px 1px 5px 0px rgba(0,0,0,0.12);
+        transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                    background-color 150ms;
+        -webkit-tap-highlight-color: transparent;
       }
 
-      .under {
-        text-decoration: underline;
+      .kpd-btn:hover {
+        background-color: var(--mdc-theme-primary, #7722ff);
+        box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2),
+                    0px 4px 5px 0px rgba(0,0,0,0.14),
+                    0px 1px 10px 0px rgba(0,0,0,0.12);
       }
 
-      .blink {
-        animation: blinkingText 1.2s infinite;
+      /* Enlarge on press — both :active (mouse) and .pressed (touch) */
+      .kpd-btn:active,
+      .kpd-btn.pressed {
+        transform: scale(1.25);
+        background-color: var(--mdc-theme-primary, #5500cc);
+        box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2),
+                    0px 8px 10px 1px rgba(0,0,0,0.14),
+                    0px 3px 14px 2px rgba(0,0,0,0.12);
+        transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 80ms cubic-bezier(0.4, 0, 0.2, 1),
+                    background-color 80ms;
       }
 
-      @keyframes blinkingText {
-        0%   { color: #000;        }
-        49%  { color: #000;        }
-        60%  { color: transparent; }
-        99%  { color: transparent; }
-        100% { color: #000;        }
+      /* ── Cursor styles ─────────────────────────────────────────────────── */
+
+      /* type 1: blinking block — animates background between transparent and     */
+      /* the text colour, inverting the cell like a real LCD block cursor.       */
+      @keyframes cursorBlock {
+        0%,  49% { background-color: transparent;          color: var(--cursor-color, #000); }
+        50%, 100% { background-color: var(--cursor-color, #000); color: var(--cursor-bg, transparent); }
+      }
+      .cursor-blink {
+        display: inline-block;
+        animation: cursorBlock 0.8s step-end infinite;
+      }
+
+      /* type 2: blinking underline — character stays, underline bar blinks */
+      @keyframes cursorUnder {
+        0%,  49% { border-bottom-color: currentColor; }
+        50%, 100% { border-bottom-color: transparent; }
+      }
+      .cursor-under {
+        display: inline-block;
+        border-bottom: 2px solid currentColor;
+        animation: cursorUnder 0.8s step-end infinite;
+      }
+
+      /* ── Flash (alarm condition) ───────────────────────────────────────── */
+      @keyframes displayFlash {
+        0%,  49% { filter: none; }
+        50%, 100% { filter: brightness(1.8) saturate(0.4) invert(0.15); }
+      }
+      .display-flash {
+        animation: displayFlash 0.6s step-end infinite;
       }
     `;
   }
