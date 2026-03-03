@@ -47,7 +47,6 @@ export class AlarmKeypadEditor extends LitElement {
     return this._config.keypad !== false;
   }
 
-  // FIX #7: Was reading this._config._audio (with underscore) — should be .audio
   get _audio() {
     return this._config.audio !== false;
   }
@@ -56,8 +55,20 @@ export class AlarmKeypadEditor extends LitElement {
     return this._config.unique_id || "";
   }
 
+  get _legacy_naming() {
+    return this._config.legacy_naming === true;
+  }
+
   get _scale() {
     return this._config.scale || "";
+  }
+
+  get _display_bg_color() {
+    return this._config.display_bg_color || "#35758c";
+  }
+
+  get _display_text_color() {
+    return this._config.display_text_color || "#000000";
   }
 
   firstUpdated() {
@@ -76,12 +87,13 @@ export class AlarmKeypadEditor extends LitElement {
     return html`
       <div class="card-config">
         <div>
-          <paper-input
+          <ha-textfield
             label="Name"
             .value="${this._title}"
             .configValue="${"title"}"
-            @value-changed="${this._valueChanged}"
-          ></paper-input>
+            @change="${this._valueChanged}"
+            style="width:100%"
+          ></ha-textfield>
           <div class="switches">
             <div class="switch">
               <ha-switch
@@ -107,26 +119,82 @@ export class AlarmKeypadEditor extends LitElement {
               ></ha-switch>
               <span>Use audio feedback</span>
             </div>
+            <div class="switch">
+              <ha-switch
+                .checked=${this._legacy_naming}
+                .configValue="${"legacy_naming"}"
+                @change="${this._valueChanged}"
+              ></ha-switch>
+              <span>Use legacy sensor naming</span>
+            </div>
           </div>
-          <paper-input
+          <ha-textfield
             label="Unique module ID"
-            type="text"
-            value=${this._unique_id}
+            .value="${this._unique_id}"
             .configValue="${"unique_id"}"
-            @value-changed="${this._valueChanged}"
-          ></paper-input>
-          <paper-input
-            label="Card scale"
-            type="number"
-            min="0.1"
-            max="10"
-            value=${this._scale}
-            .configValue="${"scale"}"
-            @value-changed="${this._valueChanged}"
-          ></paper-input>
+            @change="${this._valueChanged}"
+            style="width:100%"
+          ></ha-textfield>
+          <div class="scheme-hint">
+            ${this._legacy_naming
+              ? html`<span>📡 Legacy: <code>sensor.keypad_${this._unique_id || "&lt;id&gt;"}_display_1</code></span>`
+              : html`<span>📡 New: <code>sensor.galaxy_gateway_${this._unique_id || "&lt;id&gt;"}_keypad_${this._unique_id || "&lt;id&gt;"}_display_1</code></span>`
+            }
+          </div>
+
+
+          <div class="color-row">
+            <div class="color-field">
+              <label>Display background</label>
+              <div class="color-preview-row">
+                <input
+                  type="color"
+                  value="${this._display_bg_color}"
+                  data-config-key="display_bg_color"
+                  @input="${this._colorChanged}"
+                  class="color-input"
+                />
+                <span class="color-value">${this._display_bg_color}</span>
+              </div>
+            </div>
+            <div class="color-field">
+              <label>Display text</label>
+              <div class="color-preview-row">
+                <input
+                  type="color"
+                  value="${this._display_text_color}"
+                  data-config-key="display_text_color"
+                  @input="${this._colorChanged}"
+                  class="color-input"
+                />
+                <span class="color-value">${this._display_text_color}</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="display-preview"
+            style="background:${this._display_bg_color}; color:${this._display_text_color}"
+          >
+            <div class="preview-line">SYSTEM READY</div>
+            <div class="preview-line">ZONE 1 OK   </div>
+          </div>
+
         </div>
       </div>
     `;
+  }
+
+  // Separate handler for colour inputs — uses data-config-key attribute
+  // and fires on every `input` event so the preview updates while dragging.
+  _colorChanged(ev) {
+    if (!this._config || !this.hass) return;
+    const key = ev.target.dataset.configKey;
+    const value = ev.target.value;
+    if (!key || !value) return;
+    this._config = { ...this._config, [key]: value };
+    this.requestUpdate();
+    fireEvent(this, "config-changed", { config: this._config });
   }
 
   _valueChanged(ev) {
@@ -134,19 +202,16 @@ export class AlarmKeypadEditor extends LitElement {
       return;
     }
     const target = ev.target;
-    if (this[`_${target.configValue}`] === target.value) {
+    const value = target.checked !== undefined ? target.checked : target.value;
+    if (!target.configValue || this[`_${target.configValue}`] === value) {
       return;
     }
-    if (target.configValue) {
-      if (target.value === "") {
-        delete this._config[target.configValue];
-      } else {
-        this._config = {
-          ...this._config,
-          [target.configValue]:
-            target.checked !== undefined ? target.checked : target.value,
-        };
-      }
+    if (value === "" || value === undefined) {
+      const config = { ...this._config };
+      delete config[target.configValue];
+      this._config = config;
+    } else {
+      this._config = { ...this._config, [target.configValue]: value };
     }
     fireEvent(this, "config-changed", { config: this._config });
   }
@@ -165,6 +230,61 @@ export class AlarmKeypadEditor extends LitElement {
       }
       .switches span {
         padding: 0 16px;
+      }
+      .color-row {
+        display: flex;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .color-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+      }
+      .color-field label {
+        font-size: 12px;
+        color: var(--secondary-text-color);
+      }
+      .color-preview-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .color-input {
+        width: 48px;
+        height: 36px;
+        border: none;
+        border-radius: 6px;
+        padding: 2px;
+        cursor: pointer;
+        background: none;
+      }
+      .color-value {
+        font-size: 12px;
+        font-family: monospace;
+        color: var(--primary-text-color);
+      }
+      .scheme-hint {
+        font-size: 11px;
+        color: var(--secondary-text-color);
+        margin: 4px 0 8px 0;
+        word-break: break-all;
+      }
+      .scheme-hint code {
+        background: var(--code-editor-background-color, #f4f4f4);
+        border-radius: 3px;
+        padding: 1px 4px;
+      }
+        margin-top: 12px;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-family: monospace;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .preview-line {
+        white-space: pre;
       }
     `;
   }
