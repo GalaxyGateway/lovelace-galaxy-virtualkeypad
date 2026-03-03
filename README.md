@@ -19,4 +19,4 @@ The cards provide a way to interface to a Honeywell Galaxy Dimension or Flex pan
 Other usefull cards:
 - https://github.com/royto/logbook-card
 
-<img width="435" alt="image" src="https://github.com/user-attachments/assets/a5a9cf26-f0a0-4302-a80e-fcc6af886b59">
+<img width="908" height="648" alt="image" src="https://github.com/user-attachments/assets/1eef56fe-4968-46fc-a897-54da23ee5efa" />
