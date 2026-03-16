@@ -28,7 +28,7 @@ const HELPERS = window.loadCardHelpers();
 
 export class AlarmKeypadEditor extends LitElement {
   setConfig(config) {
-    this._config = { ...config };
+    this._config = config ? { ...config } : {};
   }
 
   static get properties() {
@@ -80,7 +80,7 @@ export class AlarmKeypadEditor extends LitElement {
   }
 
   render() {
-    if (!this.hass) {
+    if (!this.hass || !this._config) {
       return html``;
     }
 
