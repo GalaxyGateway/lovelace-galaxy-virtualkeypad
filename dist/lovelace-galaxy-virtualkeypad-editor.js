@@ -55,6 +55,10 @@ export class AlarmKeypadEditor extends LitElement {
     return this._config.unique_id || "";
   }
 
+  get _base_topic() {
+    return this._config.base_topic || "galaxy";
+  }
+
   get _legacy_naming() {
     return this._config.legacy_naming === true;
   }
@@ -135,11 +139,19 @@ export class AlarmKeypadEditor extends LitElement {
             @change="${this._valueChanged}"
             style="width:100%"
           ></ha-textfield>
+          <ha-textfield
+            label="MQTT Base Topic"
+            .value="${this._base_topic}"
+            .configValue="${"base_topic"}"
+            @change="${this._valueChanged}"
+            style="width:100%"
+          ></ha-textfield>
           <div class="scheme-hint">
             ${this._legacy_naming
-              ? html`<span>📡 Legacy: <code>sensor.keypad_${this._unique_id || "&lt;id&gt;"}_display_1</code></span>`
-              : html`<span>📡 New: <code>sensor.galaxy_gateway_${this._unique_id || "&lt;id&gt;"}_keypad_${this._unique_id || "&lt;id&gt;"}_display_1</code></span>`
+              ? html`<span>📡 Legacy sensor: <code>sensor.keypad_${this._unique_id || "&lt;id&gt;"}_display_1</code></span>`
+              : html`<span>📡 New sensor: <code>sensor.galaxy_gateway_${this._unique_id || "&lt;id&gt;"}_keypad_${this._unique_id || "&lt;id&gt;"}_display_1</code></span>`
             }
+            <span>📤 MQTT topic: <code>${this._base_topic}/${this._unique_id || "&lt;id&gt;"}/keypad/key</code></span>
           </div>
 
 
