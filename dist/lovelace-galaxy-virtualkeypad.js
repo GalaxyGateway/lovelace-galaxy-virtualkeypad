@@ -1,5 +1,5 @@
 console.info(
-  "%c  lovelace-galaxy-virtualkeypad  \n%c Version 0.1.3 ",
+  "%c  lovelace-galaxy-virtualkeypad  \n%c Version 0.1.4 ",
   "color: orange; font-weight: bold; background: black",
   "color: white; font-weight: bold; background: dimgray"
 );
@@ -77,7 +77,10 @@ class AlarmKeypad extends LitElement {
     if (!config.unique_id) {
       throw new Error("unique_id is required — please set it in the card editor.");
     }
-    this._config = config;
+    this._config = {
+      base_topic: "galaxy",
+      ...config,
+    };
   }
 
   shouldUpdate(changedProps) {
@@ -224,8 +227,9 @@ class AlarmKeypad extends LitElement {
 
   setState(e) {
     const newState = e.currentTarget.getAttribute("state");
+    const base = (this._config.base_topic || "galaxy").replace(/\/+$/, "");
     this.hass.callService("mqtt", "publish", {
-      topic: "galaxy/" + this._config.unique_id + "/keypad/key",
+      topic: base + "/" + this._config.unique_id + "/keypad/key",
       payload: newState,
     });
   }
