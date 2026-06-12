@@ -1,5 +1,5 @@
 console.info(
-  "%c  lovelace-galaxy-virtualkeypad  \n%c Version 0.1.4 ",
+  "%c  lovelace-galaxy-virtualkeypad  \n%c Version 0.1.5 ",
   "color: orange; font-weight: bold; background: black",
   "color: white; font-weight: bold; background: dimgray"
 );
@@ -200,7 +200,7 @@ class AlarmKeypad extends LitElement {
       <button
         class="kpd-btn"
         state="${state}"
-        @click="${this.setState}"
+        @mousedown="${this._mousePress}"
         @touchstart="${this._btnPress}"
         @touchend="${this._btnRelease}"
         @touchcancel="${this._btnRelease}"
@@ -217,12 +217,24 @@ class AlarmKeypad extends LitElement {
   }
 
   _btnPress(e) {
+    // Prevent the ~300 ms synthetic click the browser would generate after
+    // touchend — we fire the keystroke ourselves right now instead.
+    e.preventDefault();
     e.currentTarget.classList.add("pressed");
     if (navigator.vibrate) navigator.vibrate(30);
+    this.setState(e);
   }
 
   _btnRelease(e) {
+    e.preventDefault();
     e.currentTarget.classList.remove("pressed");
+  }
+
+  _mousePress(e) {
+    // Ignore mouse events that were synthesised from a touch sequence so we
+    // never double-fire on hybrid (touch + mouse) devices.
+    if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+    this.setState(e);
   }
 
   setState(e) {
